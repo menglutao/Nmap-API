@@ -106,7 +106,7 @@ def store_auth_key(user_id, password, unique_key):
     """
     Register a new user
     ---
-    post:
+    get:
       description: Register a new user with a user ID, password, and unique key.
       parameters:
         - name: user_id
@@ -129,7 +129,7 @@ def store_auth_key(user_id, password, unique_key):
           description: Returns the authentication key for the registered user.
         400:
           description: Error message if the user ID already exists.
-    """
+        """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         hash = hashlib.sha256()
