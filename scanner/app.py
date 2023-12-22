@@ -37,4 +37,4 @@ class ScanAPI(Resource):
 api.add_resource(ScanAPI, "/api/<string:scan_type>/<string:url>")
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port="5000")
+    app.run(host="0.0.0.0", port="8080")

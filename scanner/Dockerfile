@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY . /app
 RUN pip install --no-cache-dir Flask Flask-RESTful python-nmap
-EXPOSE 5000
+EXPOSE 8080
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 USER root

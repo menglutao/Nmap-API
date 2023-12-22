@@ -14,6 +14,10 @@ from contextlib import contextmanager
 from flask import Flask, render_template
 from flask_restful import Api, Resource
 
+from flasgger import Swagger
+
+
+
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 IMAGE_NAME = os.getenv("IMAGE_NAME")
@@ -23,6 +27,8 @@ model_engine = "gpt-3.5-turbo-0613"
 
 app = Flask(__name__)
 api = Api(app)
+Swagger(app)
+
 
 nm = nmap.PortScanner()
 started_containers = []
@@ -32,11 +38,29 @@ client = docker.from_env()
 
 @app.route('/', methods=['GET'])
 def home():
+    """
+    Home page
+    ---
+    get:
+      description: Get the home page of the API.
+      responses:
+        200:
+          description: HTML content of the home page.
+    """
     return render_template("index.html")
 
 
 @app.route('/doc', methods=['GET'])
 def doc():
+    """
+    Documentation page
+    ---
+    get:
+      description: Get the documentation page of the API.
+      responses:
+        200:
+          description: HTML content of the documentation page.
+    """
     return render_template("doc.html")
 
 
@@ -55,6 +79,7 @@ def get_db_connection():
         yield conn
     finally:
         conn.close()
+
 
 
 def sanitize(input_string: str) -> str:
@@ -78,6 +103,33 @@ def sanitize(input_string: str) -> str:
 
 @app.route('/register/<int:user_id>/<string:password>/<string:unique_key>')
 def store_auth_key(user_id, password, unique_key):
+    """
+    Register a new user
+    ---
+    post:
+      description: Register a new user with a user ID, password, and unique key.
+      parameters:
+        - name: user_id
+          in: path
+          type: integer
+          required: true
+          description: Unique ID for the user.
+        - name: password
+          in: path
+          type: string
+          required: true
+          description: Password for the user.
+        - name: unique_key
+          in: path
+          type: string
+          required: true
+          description: Unique key for user authentication.
+      responses:
+        200:
+          description: Returns the authentication key for the registered user.
+        400:
+          description: Error message if the user ID already exists.
+    """
     with get_db_connection() as conn:
         cursor = conn.cursor()
         hash = hashlib.sha256()
@@ -123,12 +175,12 @@ def deploy_docker_instances(image_name, start_port, num_instances):
     client = docker.from_env()
     for i in range(num_instances):
         host_port = start_port + i
-        container_port = '5000/tcp'
+        container_port = '8080/tcp'
         port_bindings = {container_port: host_port}
         container = client.containers.run(
             image_name, detach=True, ports=port_bindings)
         print(
-            f"Started container {container.short_id} on host port {host_port} mapped to container port 5000")
+            f"Started container {container.short_id} on host port {host_port} mapped to container port 5000") #should be 8080
         started_containers.append(container.id)
     atexit.register(cleanup_containers)
 
@@ -156,6 +208,15 @@ def get_total_resource_usage():
 
 @app.route('/checkup')
 def monitor_and_manage_containers():
+    """
+    Checkup for resource usage
+    ---
+    get:
+      description: Monitor and manage Docker containers based on system resource usage.
+      responses:
+        200:
+          description: JSON data indicating total and available CPU and RAM, and whether a cleanup is needed.
+    """
     CLEAN_NEEDED = "NO"
     total_memory_usage, total_cpu_usage = get_total_resource_usage()
 
@@ -195,7 +256,7 @@ def profile(auth, url, profile):
     if not authenticate(auth):
         return {"error": "Authentication failed"}
     base_url = "http://127.0.0.1"
-    start_port = 5001
+    start_port = 8081
     num_instances = 10
     selected_instance = (last_used_instance + 1) % num_instances
     last_used_instance = selected_instance
@@ -261,6 +322,33 @@ def AI(analize: str) -> dict[str, any]:
 
 class ScanAPI(Resource):
     def get(self, auth, url, scan_type):
+        """
+        Perform a network scan
+        ---
+        get:
+          description: Perform a network scan based on the specified type and URL.
+          parameters:
+            - name: auth
+              in: path
+              type: string
+              required: true
+              description: Authentication key for the user.
+            - name: url
+              in: path
+              type: string
+              required: true
+              description: URL or IP address to scan.
+            - name: scan_type
+              in: path
+              type: string
+              required: true
+              description: Type of the scan to perform (e.g., 'p1', 'p2').
+          responses:
+            200:
+              description: JSON data of the scan result.
+            400:
+              description: Error message if authentication fails or an invalid URL is provided.
+        """
         return profile(
             auth=auth,
             profile=scan_type,
