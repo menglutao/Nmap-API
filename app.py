@@ -180,7 +180,7 @@ def deploy_docker_instances(image_name, start_port, num_instances):
         container = client.containers.run(
             image_name, detach=True, ports=port_bindings)
         print(
-            f"Started container {container.short_id} on host port {host_port} mapped to container port 5000") #should be 8080
+            f"Started container {container.short_id} on host port {host_port} mapped to container port 8080") # before was 5000
         started_containers.append(container.id)
     atexit.register(cleanup_containers)
 
